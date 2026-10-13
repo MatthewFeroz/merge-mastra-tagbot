@@ -1,58 +1,60 @@
 import type { Agent } from '@mastra/core/agent';
 import { agentHandlerConfigured } from '../src/mastra/agent-handler';
-import type { Mention } from './scenario';
+import type { SlackThread } from './scenario';
 
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
-const blue = (s: string) => `\x1b[34m${s}\x1b[0m`;
+const purple = (s: string) => `\x1b[35m${s}\x1b[0m`;
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
 const short = (v: unknown, n = 110) => {
   const s = JSON.stringify(v) ?? '';
   return s.length > n ? `${s.slice(0, n)}…` : s;
 };
+const indent = (s: string, pad: string) => s.split('\n').join(`\n${pad}`);
 
-/** Plays each mention through the agent and prints what it did. Returns the number of completed actions. */
-export async function runDemo(agent: Agent, scenario: Mention[], { pauseMs = 800 } = {}) {
+/** Plays each thread through the agent and prints what it did. Returns the tools called per thread. */
+export async function runDemo(agent: Agent, scenario: SlackThread[], { pauseMs = 800 } = {}) {
   const pause = () => new Promise(r => setTimeout(r, pauseMs));
-  const mode = agentHandlerConfigured ? green('live, through Merge Agent Handler') : dim('dry run, no apps touched');
-  console.log(`\n${bold('Merge × Mastra Bot')}  ${mode}\n`);
+  const mode = agentHandlerConfigured ? green('live, Linear through Merge Agent Handler') : dim('dry run, Linear is simulated');
+  console.log(`\n${bold('Merge × Mastra Teammate')}  ${mode}\n`);
 
-  let actions = 0;
-  for (const m of scenario) {
-    console.log(dim(`  ${m.replyingTo.from}  ${m.replyingTo.text}`));
-    console.log(`  ${bold(m.from)}  ${m.text.replace('@MergeMastraBot', blue('@MergeMastraBot'))}\n`);
+  const calls: string[][] = [];
+  for (const thread of scenario) {
+    console.log(bold(`  ${thread.channel}`));
+    for (const m of thread.messages) console.log(`  ${dim(m.from.padEnd(18))} ${m.text}`);
+    console.log(`  ${bold(thread.mention.from.padEnd(18))} ${thread.mention.text.replace('@bot', purple('@bot'))}\n`);
     await pause();
 
+    const transcript = thread.messages.map(m => `${m.from}: ${m.text}`).join('\n');
     const stream = await agent.stream(
-      `${m.from} tagged you on X.\nTheir request: ${m.text}\nThe tweet they replied to, from ${m.replyingTo.from}: ${m.replyingTo.text}`,
-      { maxSteps: 4 },
+      `${thread.mention.from} mentioned you in a thread in ${thread.channel}.\n\nThread so far:\n${transcript}\n\nTheir message: ${thread.mention.text}`,
+      { maxSteps: 5 },
     );
 
+    const called: string[] = [];
     for await (const chunk of stream.fullStream) {
       if (chunk.type === 'tool-call') {
+        called.push(chunk.payload.toolName);
         console.log(`    → ${chunk.payload.toolName} ${dim(short(chunk.payload.args))}`);
       } else if (chunk.type === 'tool-result') {
-        const result = chunk.payload.result as { ok?: boolean; link?: string } | undefined;
-        if (chunk.payload.isError || !result?.ok) {
-          console.log(`      ${red('✗ failed')} ${dim(short(result, 200))}`);
-        } else {
-          actions++;
-          console.log(`      ${green('✓ done')} ${result.link ? dim(result.link) : ''}`);
-        }
+        const r = chunk.payload.result as any;
+        if (chunk.payload.isError) console.log(`      ${red('✗ failed')} ${dim(short(r, 200))}`);
+        else if (r?.tickets) console.log(`      ${green('✓')} ${r.tickets.length ? r.tickets.map((t: any) => `${t.id} ${t.title}`).join(', ') : 'no open tickets match'}`);
+        else if (r?.id) console.log(`      ${green('✓ created')} ${r.id} ${dim(r.url)}`);
       } else if (chunk.type === 'tool-error') {
         console.log(`      ${red('✗ failed')} ${dim(String((chunk.payload as any).error?.message ?? chunk.payload))}`);
       } else if (chunk.type === 'error') {
         throw new Error(`The agent stopped. ${String((chunk.payload as any)?.error?.message ?? chunk.payload)}`);
       }
     }
+    calls.push(called);
 
-    console.log(`\n  ${bold('@MergeMastraBot')}  ${await stream.text}\n`);
+    console.log(`\n  ${purple('bot'.padEnd(18))} ${indent(await stream.text, ' '.repeat(21))}\n`);
     console.log(dim('  ─────────────────────────────────────────\n'));
     await pause();
   }
 
-  console.log(`${bold(String(actions))} of ${scenario.length} actions completed.`);
-  if (agentHandlerConfigured) console.log(dim('Every call is in Merge Agent Handler → Tool Call Logs.'));
-  return actions;
+  if (agentHandlerConfigured) console.log(dim('Every Linear call is in Merge Agent Handler → Tool Call Logs.'));
+  return calls;
 }

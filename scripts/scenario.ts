@@ -1,34 +1,38 @@
-// The tweets the demo plays through. Each one is someone tagging the bot under another post.
-// Edit freely, the bot reads them like real mentions.
-export type Mention = {
-  from: string;
-  text: string;
-  replyingTo: { from: string; text: string };
+// The Slack threads the demo plays through. Each ends with someone @mentioning the bot.
+// Edit freely, the bot reads them like real threads.
+export type SlackThread = {
+  channel: string;
+  messages: { from: string; text: string }[];
+  mention: { from: string; text: string };
 };
 
-export const scenario: Mention[] = [
+export const scenario: SlackThread[] = [
   {
-    from: '@maya_builds',
-    replyingTo: {
-      from: '@mastra',
-      text: 'Live next Tuesday, Oct 20 at 12pm ET. Merge and Mastra show how to give one agent access to hundreds of apps without losing control. mastra.ai/workshops',
-    },
-    text: '@MergeMastraBot put this on my calendar',
+    channel: '#support',
+    messages: [
+      { from: 'Jordan (Support)', text: 'Acme is saying CSV exports time out. They tried three times this morning.' },
+      { from: 'Sam (Eng)', text: 'Looks like it only happens for exports over ~50MB. Smaller ones are fine. Started after Tuesday’s deploy.' },
+      { from: 'Jordan (Support)', text: 'They have a board meeting Thursday and need the data before then.' },
+      { from: 'Alex (CSM)', text: 'Their renewal is next month too, so this one matters.' },
+    ],
+    mention: { from: 'Jordan (Support)', text: '@bot turn this thread into a Linear ticket' },
   },
   {
-    from: '@devon_ships',
-    replyingTo: {
-      from: '@agentpatterns',
-      text: 'Seven things we learned shipping agents to production this year. Scope tools per user, log every action, keep the model out of your credentials. Full write-up at agentpatterns.dev/production',
-    },
-    text: '@MergeMastraBot save this to my reading list',
+    channel: '#eng',
+    messages: [
+      { from: 'Sam (Eng)', text: 'Staging deploys have failed 4 of the last 10 runs. Always the integration test step.' },
+      { from: 'Riya (Eng)', text: 'It’s the payments sandbox timing out. Their status page shows degraded since yesterday.' },
+      { from: 'Sam (Eng)', text: 'Can we mock it in CI for now? Retrying just doubles the build time.' },
+      { from: 'Lee (Eng Manager)', text: 'Yes, mock it this week. Riya, can you own that? We’ll revisit once their sandbox is stable.' },
+      { from: 'Riya (Eng)', text: 'On it. Will have a PR up tomorrow.' },
+    ],
+    mention: { from: 'Priya (PM)', text: '@bot can you summarize this thread for me? I just got back' },
   },
   {
-    from: '@priya_codes',
-    replyingTo: {
-      from: '@a_customer',
-      text: 'Checkout keeps failing with a 502 since about 9:40am. Tried three cards. Anyone else seeing this?',
-    },
-    text: '@MergeMastraBot send this to the team so someone looks at it',
+    channel: '#sales',
+    messages: [
+      { from: 'Morgan (AE)', text: 'Globex just told me their big CSV exports keep timing out. Anyone know about this?' },
+    ],
+    mention: { from: 'Morgan (AE)', text: '@bot can you file a ticket for this?' },
   },
 ];
