@@ -50,7 +50,8 @@ export async function runDemo(agent: Agent, scenario: XThread[], { pauseMs = 800
     calls.push(called);
 
     const reply = await stream.text;
-    console.log(`\n  ${dim('↳ ')}${blue('@MergeMastraBot')}  ${indent(reply, '                    ')}  ${dim(`(${reply.length} chars)`)}\n`);
+    const length = reply.length > 280 ? red(`(${reply.length} chars, over X's 280 limit)`) : dim(`(${reply.length} chars)`);
+    console.log(`\n  ${dim('↳ ')}${blue('@MergeMastraBot')}  ${indent(reply, '                    ')}  ${length}\n`);
     console.log(dim('  ─────────────────────────────────────────\n'));
     await pause();
   }

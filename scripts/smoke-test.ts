@@ -56,7 +56,7 @@ const scriptedModel = {
     const last: any = results.at(-1);
     const value = last?.output?.value ?? last?.result;
 
-    if (!last) return call('findSimilarTickets', { keyword: 'export' });
+    if (!last) return call('findSimilarTickets', { keywords: ['csv', 'export'] });
     if (last.toolName === 'findSimilarTickets' && value?.tickets?.length) {
       return say('Already logged with the team and they’re on it. Thanks for reporting it.');
     }

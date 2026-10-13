@@ -14,30 +14,31 @@ const dryRunTickets: Ticket[] = [];
 export const findSimilarTickets = createTool({
   id: 'find-similar-tickets',
   description:
-    'Search open Linear tickets whose title contains a keyword. Use one or two distinctive words, e.g. "export" or "timeout". Call this before creating a ticket.',
-  inputSchema: z.object({ keyword: z.string().min(2) }),
+    'Search open Linear tickets by title. Pass 1 to 3 single words that would appear in a ticket title, e.g. ["csv", "export"]. Call this before creating a ticket.',
+  inputSchema: z.object({ keywords: z.array(z.string().min(2)).min(1).max(3) }),
   outputSchema: z.object({ tickets: z.array(ticketSchema) }),
-  execute: async ({ keyword }) => {
+  // Linear's title search is a plain substring match, so search each word on its own and merge.
+  execute: async ({ keywords }) => {
+    const words = keywords.flatMap(k => k.toLowerCase().split(/\s+/)).filter(w => w.length > 1).slice(0, 3);
     if (!agentHandlerConfigured) {
-      const k = keyword.toLowerCase();
-      return { tickets: dryRunTickets.filter(t => t.title.toLowerCase().includes(k)) };
+      return { tickets: dryRunTickets.filter(t => words.some(w => t.title.toLowerCase().includes(w))) };
     }
-    const result = await callAgentHandler('linear__get_issues', {
-      ...nulls(GET_ISSUES_FIELDS),
-      team_id: requireEnv('LINEAR_TEAM_ID'),
-      query: keyword,
-      open_only: true,
-      limit: 5,
-    });
-    const issues: any[] = result?.issues ?? result?.nodes ?? result?.data ?? [];
-    return {
-      tickets: issues.map(i => ({
-        id: i.identifier ?? i.id,
-        title: i.title,
-        url: i.url ?? '',
-        status: i.state?.name ?? i.state ?? '',
-      })),
-    };
+    const found = new Map<string, Ticket>();
+    for (const word of words) {
+      const result = await callAgentHandler('linear__get_issues', {
+        ...nulls(GET_ISSUES_FIELDS),
+        team_id: requireEnv('LINEAR_TEAM_ID'),
+        query: word,
+        open_only: true,
+        limit: 5,
+      });
+      const issues: any[] = result?.issues ?? result?.nodes ?? result?.data ?? [];
+      for (const i of issues) {
+        const id = i.identifier ?? i.id;
+        found.set(id, { id, title: i.title, url: i.url ?? '', status: i.state?.name ?? i.state ?? '' });
+      }
+    }
+    return { tickets: [...found.values()] };
   },
 });
 
