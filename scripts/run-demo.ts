@@ -39,7 +39,6 @@ export async function runDemo(agent: Agent, scenario: XThread[], { pauseMs = 800
       } else if (chunk.type === 'tool-result') {
         const r = chunk.payload.result as any;
         if (chunk.payload.isError) console.log(`      ${red('✗ failed')} ${dim(short(r, 200))}`);
-        else if (r?.tickets) console.log(`      ${green('✓')} ${r.tickets.length ? r.tickets.map((t: any) => `${t.id} ${t.title}`).join(', ') : 'no open tickets match'}`);
         else if (r?.id) console.log(`      ${green('✓ created in Linear')} ${r.id} ${dim(r.url)}`);
       } else if (chunk.type === 'tool-error') {
         console.log(`      ${red('✗ failed')} ${dim(String((chunk.payload as any).error?.message ?? chunk.payload))}`);

@@ -24,10 +24,4 @@ export const scenario: XThread[] = [
     ],
     mention: { from: '@priya_pm', text: '@MergeMastraBot summarize this thread' },
   },
-  {
-    posts: [
-      { from: '@morgan_ops', text: 'Is anyone else unable to export big CSVs right now? Keeps timing out' },
-    ],
-    mention: { from: '@morgan_ops', text: '@MergeMastraBot can you report this?' },
-  },
 ];

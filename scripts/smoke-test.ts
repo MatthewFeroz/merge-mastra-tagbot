@@ -1,5 +1,5 @@
 // Runs the whole demo loop with a scripted stand-in model, so the plumbing (agent, tools,
-// streaming, output, duplicate check) can be checked without an API key.
+// streaming, output) can be checked without an API key.
 //   npm test
 import { Agent } from '@mastra/core/agent';
 import { tagbotInstructions } from '../src/mastra/agents/tagbot';
@@ -34,7 +34,7 @@ const call = (toolName: string, input: unknown) => ({
   ]),
 });
 
-// Does what a good model should: summarize without tools, check for duplicates before filing.
+// Does what a good model should: file the bug report, summarize without tools.
 const scriptedModel = {
   specificationVersion: 'v2',
   provider: 'scripted',
@@ -48,19 +48,8 @@ const scriptedModel = {
     const request = JSON.stringify(prompt[lastUser]?.content);
     if (/summarize/i.test(request)) return say('Keep agent credentials in a broker, not the agent. You get one place to see every action and can revoke access without redeploying. Prototype with keys, switch before real users.');
 
-    const results = prompt
-      .slice(lastUser + 1)
-      .filter(m => m.role === 'tool')
-      .flatMap(m => m.content)
-      .filter((p: any) => p.type === 'tool-result');
-    const last: any = results.at(-1);
-    const value = last?.output?.value ?? last?.result;
-
-    if (!last) return call('findSimilarTickets', { keywords: ['csv', 'export'] });
-    if (last.toolName === 'findSimilarTickets' && value?.tickets?.length) {
-      return say('Already logged with the team and they’re on it. Thanks for reporting it.');
-    }
-    if (last.toolName === 'findSimilarTickets') {
+    const calledTool = prompt.slice(lastUser + 1).some(m => m.role === 'tool');
+    if (!calledTool) {
       return call('createTicket', {
         title: 'CSV export times out for files over 50MB',
         description: '**What’s happening** Exports over ~50MB time out since Tuesday’s deploy.\n**Reported by** @dana_ships and @kev_codes on X',
@@ -80,7 +69,7 @@ const agent = new Agent({
 });
 
 const calls = await runDemo(agent, scenario, { pauseMs: 0 });
-const expected = [['findSimilarTickets', 'createTicket'], [], ['findSimilarTickets']];
+const expected = [['createTicket'], []];
 if (JSON.stringify(calls) !== JSON.stringify(expected)) {
   console.error(`\x1b[31mSmoke test failed\nexpected ${JSON.stringify(expected)}\ngot      ${JSON.stringify(calls)}\x1b[0m`);
   process.exit(1);
