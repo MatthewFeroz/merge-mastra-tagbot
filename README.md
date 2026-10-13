@@ -10,17 +10,21 @@ npm run demo
 
 ## What the demo plays
 
-| Someone tags the bot under… | and asks | The bot uses |
-|---|---|---|
-| A post announcing the Oct 20 workshop | put this on my calendar | `google_calendar__create_event` |
-| A post about shipping agents to production | save this to my reading list | `notion__create_page` |
-| A customer reporting checkout errors | send this to the team | `slack__post_message` |
+| Someone tags the bot under… | and asks | Bot tool | Agent Handler tool |
+|---|---|---|---|
+| A post announcing the Oct 20 workshop | put this on my calendar | `addToCalendar` | `google_calendar__create_event` |
+| A post about shipping agents to production | save this to my reading list | `saveToReadingList` | `notion__create_page` |
+| A customer reporting checkout errors | send this to the team | `tellTheTeam` | `slack__post_message` |
+
+The model only fills in a few plain fields (title, time, message). Each tool builds the full Agent Handler request in code, so the model never has to handle the connectors' long schemas.
 
 Edit `scripts/scenario.ts` to change the tweets. The bot reads them like real mentions, nothing is scripted on its side.
 
 ## Dry run or live
 
-With no `AGENT_HANDLER_*` values the demo is a dry run. The agent still reads each tweet, picks a tool, fills it in and replies, but stand-in tools report what they would have done.
+With no `AGENT_HANDLER_*` values the demo is a dry run. The agent still reads each tweet, picks a tool, fills it in and replies, but nothing is sent to your apps.
+
+`npm test` runs the whole loop with a scripted stand-in model, no API key needed.
 
 To run it live:
 

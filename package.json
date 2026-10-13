@@ -8,13 +8,15 @@
     "dev": "mastra dev",
     "build": "mastra build",
     "demo": "tsx --env-file-if-exists=.env scripts/demo.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx scripts/smoke-test.ts"
   },
   "dependencies": {
     "@chat-adapter/x": "^4.41.1",
     "@mastra/core": "^1.76.0",
     "@mastra/libsql": "^1.26.0",
     "@mastra/mcp": "^2.3.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@xdevplatform/xdk": "^0.6.6",
     "zod": "^4.0.0"
   },
