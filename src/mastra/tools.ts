@@ -43,12 +43,12 @@ export const findSimilarTickets = createTool({
 
 export const createTicket = createTool({
   id: 'create-ticket',
-  description: 'Create a Linear ticket from a Slack thread.',
+  description: 'Create a Linear ticket from an X thread.',
   inputSchema: z.object({
     title: z.string().max(90).describe('Short, specific title, e.g. "CSV export times out for files over 50MB"'),
     description: z
       .string()
-      .describe('Markdown with sections for what’s happening, impact (who is affected), details from the thread, and who reported it'),
+      .describe('Markdown with sections for what’s happening, who reported it on X, and details from the thread'),
     priority: z.enum(['urgent', 'high', 'medium', 'low']),
   }),
   outputSchema: ticketSchema,
@@ -70,7 +70,7 @@ export const createTicket = createTool({
   },
 });
 
-export const teammateTools = { findSimilarTickets, createTicket };
+export const tagbotTools = { findSimilarTickets, createTicket };
 
 // Agent Handler marks every field required and lets optional ones be null.
 const GET_ISSUES_FIELDS = [

@@ -1,38 +1,33 @@
-// The Slack threads the demo plays through. Each ends with someone @mentioning the bot.
-// Edit freely, the bot reads them like real threads.
-export type SlackThread = {
-  channel: string;
-  messages: { from: string; text: string }[];
+// The X threads the demo plays through. The first post starts the thread, the rest are replies,
+// and each ends with someone tagging the bot. Edit freely, the bot reads them like real threads.
+export type XThread = {
+  posts: { from: string; text: string }[];
   mention: { from: string; text: string };
 };
 
-export const scenario: SlackThread[] = [
+export const scenario: XThread[] = [
   {
-    channel: '#support',
-    messages: [
-      { from: 'Jordan (Support)', text: 'Acme is saying CSV exports time out. They tried three times this morning.' },
-      { from: 'Sam (Eng)', text: 'Looks like it only happens for exports over ~50MB. Smaller ones are fine. Started after Tuesday’s deploy.' },
-      { from: 'Jordan (Support)', text: 'They have a board meeting Thursday and need the data before then.' },
-      { from: 'Alex (CSM)', text: 'Their renewal is next month too, so this one matters.' },
+    posts: [
+      { from: '@dana_ships', text: 'CSV exports have been timing out all morning. Tried three times. Board meeting Thursday and I need this data 😩' },
+      { from: '@kev_codes', text: 'Same here. Anything over about 50MB just dies, smaller files go through fine' },
+      { from: '@dana_ships', text: 'Started after the update on Tuesday I think' },
     ],
-    mention: { from: 'Jordan (Support)', text: '@bot turn this thread into a Linear ticket' },
+    mention: { from: '@dana_ships', text: '@MergeMastraBot can you turn this into a ticket for the team?' },
   },
   {
-    channel: '#eng',
-    messages: [
-      { from: 'Sam (Eng)', text: 'Staging deploys have failed 4 of the last 10 runs. Always the integration test step.' },
-      { from: 'Riya (Eng)', text: 'It’s the payments sandbox timing out. Their status page shows degraded since yesterday.' },
-      { from: 'Sam (Eng)', text: 'Can we mock it in CI for now? Retrying just doubles the build time.' },
-      { from: 'Lee (Eng Manager)', text: 'Yes, mock it this week. Riya, can you own that? We’ll revisit once their sandbox is stable.' },
-      { from: 'Riya (Eng)', text: 'On it. Will have a PR up tomorrow.' },
+    posts: [
+      { from: '@agentpatterns', text: 'Hot take. Agents should never hold their own API keys. Credentials belong in a broker the agent calls through.' },
+      { from: '@sam_builds', text: 'Agree for prod. For prototypes it slows you down a lot though' },
+      { from: '@riya_dev', text: 'The broker also gives you one place to see every action the agent took. That alone is worth it' },
+      { from: '@agentpatterns', text: 'Exactly. And you can revoke one user’s access without redeploying anything' },
+      { from: '@sam_builds', text: 'Fair. Prototype with keys, move to a broker before real users touch it' },
     ],
-    mention: { from: 'Priya (PM)', text: '@bot can you summarize this thread for me? I just got back' },
+    mention: { from: '@priya_pm', text: '@MergeMastraBot summarize this thread' },
   },
   {
-    channel: '#sales',
-    messages: [
-      { from: 'Morgan (AE)', text: 'Globex just told me their big CSV exports keep timing out. Anyone know about this?' },
+    posts: [
+      { from: '@morgan_ops', text: 'Is anyone else unable to export big CSVs right now? Keeps timing out' },
     ],
-    mention: { from: 'Morgan (AE)', text: '@bot can you file a ticket for this?' },
+    mention: { from: '@morgan_ops', text: '@MergeMastraBot can you report this?' },
   },
 ];

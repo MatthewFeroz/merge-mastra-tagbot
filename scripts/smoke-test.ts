@@ -2,8 +2,8 @@
 // streaming, output, duplicate check) can be checked without an API key.
 //   npm test
 import { Agent } from '@mastra/core/agent';
-import { teammateInstructions } from '../src/mastra/agents/teammate';
-import { teammateTools } from '../src/mastra/tools';
+import { tagbotInstructions } from '../src/mastra/agents/tagbot';
+import { tagbotTools } from '../src/mastra/tools';
 import { runDemo } from './run-demo';
 import { scenario } from './scenario';
 
@@ -46,7 +46,7 @@ const scriptedModel = {
   doStream: async ({ prompt }: { prompt: PromptMessage[] }) => {
     const lastUser = prompt.map(m => m.role).lastIndexOf('user');
     const request = JSON.stringify(prompt[lastUser]?.content);
-    if (/summarize/i.test(request)) return say('• Staging deploys fail on the payments sandbox\n• Decision is to mock it in CI\n• Riya owns the PR');
+    if (/summarize/i.test(request)) return say('Keep agent credentials in a broker, not the agent. You get one place to see every action and can revoke access without redeploying. Prototype with keys, switch before real users.');
 
     const results = prompt
       .slice(lastUser + 1)
@@ -58,25 +58,25 @@ const scriptedModel = {
 
     if (!last) return call('findSimilarTickets', { keyword: 'export' });
     if (last.toolName === 'findSimilarTickets' && value?.tickets?.length) {
-      return say(`This is already tracked as ${value.tickets[0].id}, so I didn’t file a duplicate.`);
+      return say('Already logged with the team and they’re on it. Thanks for reporting it.');
     }
     if (last.toolName === 'findSimilarTickets') {
       return call('createTicket', {
         title: 'CSV export times out for files over 50MB',
-        description: '**What’s happening** Exports over ~50MB time out since Tuesday’s deploy.\n**Impact** Acme, board meeting Thursday, renewal next month.\n**Reported by** Jordan (Support)',
+        description: '**What’s happening** Exports over ~50MB time out since Tuesday’s deploy.\n**Reported by** @dana_ships and @kev_codes on X',
         priority: 'high',
       });
     }
-    return say(`Filed ${value?.id}, CSV export times out for files over 50MB (high priority).`);
+    return say('Logged with the team, thanks for flagging it. They’re looking at large CSV exports timing out.');
   },
 };
 
 const agent = new Agent({
-  id: 'teammate-smoke',
-  name: 'Merge × Mastra Teammate (smoke test)',
-  instructions: teammateInstructions,
+  id: 'tagbot-smoke',
+  name: 'Merge × Mastra Bot (smoke test)',
+  instructions: tagbotInstructions,
   model: scriptedModel as any,
-  tools: teammateTools,
+  tools: tagbotTools,
 });
 
 const calls = await runDemo(agent, scenario, { pauseMs: 0 });

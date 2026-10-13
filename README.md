@@ -1,6 +1,6 @@
-# Merge × Mastra Teammate
+# Merge × Mastra Bot
 
-Build your own Grok Bot style teammate. Someone @mentions the bot in a Slack thread, and it turns the thread into a Linear ticket or a summary. It's built with Mastra and reaches Linear through Merge Agent Handler, so access is scoped, credentials stay with Merge, and every action is logged.
+A Grok-style bot for X that can act on what it reads. Someone tags it in a thread, and it either summarizes the thread or turns it into a ticket in the company's Linear. It's built with Mastra and reaches Linear through Merge Agent Handler, so anyone on X can tag it but it can only ever do what Merge allows.
 
 ```bash
 npm install
@@ -10,13 +10,21 @@ npm run demo
 
 ## What the demo plays
 
-| Thread | Someone asks | What the bot does |
+| X thread | Someone tags the bot with | What the bot does |
 |---|---|---|
-| `#support` Acme's CSV exports time out, renewal at risk | turn this thread into a Linear ticket | Checks Linear for an open ticket, finds none, files one with the details and impact |
-| `#eng` long thread about flaky staging deploys | summarize this thread | Replies with the problem, decision and owner, no tools |
-| `#sales` Globex hits the same export timeouts | file a ticket for this | Finds the ticket from the first thread and points to it instead of filing a duplicate |
+| Users complaining that big CSV exports time out | can you turn this into a ticket for the team? | Checks Linear for an open ticket, finds none, files one with the details from the thread, replies that it's logged |
+| A debate about where agents should keep credentials | summarize this thread | Replies with the main points, no tools |
+| Another user hits the same export timeouts | can you report this? | Finds the ticket from the first thread and says it's already logged instead of filing a duplicate |
 
 Edit `scripts/scenario.ts` to change the threads. Only the threads are scripted. The agent decides what to do.
+
+## Why Merge matters here
+
+The bot is public, so anyone can tag it. Merge Agent Handler is what makes that safe.
+
+- The Tool Pack holds only `linear__get_issues` and `linear__create_issue`. Whatever someone tweets, the bot can't edit, delete or read anything else.
+- Merge holds the Linear credentials, so they never live in the bot.
+- Every call is recorded in Tool Call Logs.
 
 ## Dry run or live
 
@@ -30,11 +38,6 @@ To create real tickets:
 2. Create a Tool Pack with `linear__get_issues` and `linear__create_issue`, and nothing else.
 3. Fill in `AGENT_HANDLER_*` and `LINEAR_TEAM_ID` in `.env`.
 
-## How it works
+## Real mentions on X
 
-| Piece | Job |
-|---|---|
-| Mastra agent (`src/mastra/agents/teammate.ts`) | Reads the thread, decides between summarizing, filing, or pointing to an existing ticket |
-| Bot tools (`src/mastra/tools.ts`) | The model fills in a title, description and priority. The tool builds the full Agent Handler request |
-| Merge Agent Handler | Holds the Linear credentials, allows only the tools in the Tool Pack, logs every call |
-| Mastra Slack channel | When `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` are set, the same agent answers real @mentions and reads the thread itself |
+The same agent answers real tags once `X_CONSUMER_SECRET` and `X_USER_ACCESS_TOKEN` are set and it's deployed on the Mastra platform, with X's `post.mention.create` webhook pointed at it.

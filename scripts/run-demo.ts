@@ -1,10 +1,10 @@
 import type { Agent } from '@mastra/core/agent';
 import { agentHandlerConfigured } from '../src/mastra/agent-handler';
-import type { SlackThread } from './scenario';
+import type { XThread } from './scenario';
 
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
-const purple = (s: string) => `\x1b[35m${s}\x1b[0m`;
+const blue = (s: string) => `\x1b[34m${s}\x1b[0m`;
 const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
 const short = (v: unknown, n = 110) => {
@@ -13,22 +13,21 @@ const short = (v: unknown, n = 110) => {
 };
 const indent = (s: string, pad: string) => s.split('\n').join(`\n${pad}`);
 
-/** Plays each thread through the agent and prints what it did. Returns the tools called per thread. */
-export async function runDemo(agent: Agent, scenario: SlackThread[], { pauseMs = 800 } = {}) {
+/** Plays each X thread through the agent and prints what it did. Returns the tools called per thread. */
+export async function runDemo(agent: Agent, scenario: XThread[], { pauseMs = 800 } = {}) {
   const pause = () => new Promise(r => setTimeout(r, pauseMs));
   const mode = agentHandlerConfigured ? green('live, Linear through Merge Agent Handler') : dim('dry run, Linear is simulated');
-  console.log(`\n${bold('Merge × Mastra Teammate')}  ${mode}\n`);
+  console.log(`\n${bold('𝕏  @MergeMastraBot')}  ${mode}\n`);
 
   const calls: string[][] = [];
   for (const thread of scenario) {
-    console.log(bold(`  ${thread.channel}`));
-    for (const m of thread.messages) console.log(`  ${dim(m.from.padEnd(18))} ${m.text}`);
-    console.log(`  ${bold(thread.mention.from.padEnd(18))} ${thread.mention.text.replace('@bot', purple('@bot'))}\n`);
+    thread.posts.forEach((p, i) => console.log(`  ${i === 0 ? '' : dim('↳ ')}${dim(p.from)}  ${p.text}`));
+    console.log(`  ${dim('↳ ')}${bold(thread.mention.from)}  ${thread.mention.text.replace('@MergeMastraBot', blue('@MergeMastraBot'))}\n`);
     await pause();
 
-    const transcript = thread.messages.map(m => `${m.from}: ${m.text}`).join('\n');
+    const transcript = thread.posts.map(p => `${p.from}: ${p.text}`).join('\n');
     const stream = await agent.stream(
-      `${thread.mention.from} mentioned you in a thread in ${thread.channel}.\n\nThread so far:\n${transcript}\n\nTheir message: ${thread.mention.text}`,
+      `${thread.mention.from} tagged you in a thread on X.\n\nThread:\n${transcript}\n\nTheir post: ${thread.mention.text}`,
       { maxSteps: 5 },
     );
 
@@ -41,7 +40,7 @@ export async function runDemo(agent: Agent, scenario: SlackThread[], { pauseMs =
         const r = chunk.payload.result as any;
         if (chunk.payload.isError) console.log(`      ${red('✗ failed')} ${dim(short(r, 200))}`);
         else if (r?.tickets) console.log(`      ${green('✓')} ${r.tickets.length ? r.tickets.map((t: any) => `${t.id} ${t.title}`).join(', ') : 'no open tickets match'}`);
-        else if (r?.id) console.log(`      ${green('✓ created')} ${r.id} ${dim(r.url)}`);
+        else if (r?.id) console.log(`      ${green('✓ created in Linear')} ${r.id} ${dim(r.url)}`);
       } else if (chunk.type === 'tool-error') {
         console.log(`      ${red('✗ failed')} ${dim(String((chunk.payload as any).error?.message ?? chunk.payload))}`);
       } else if (chunk.type === 'error') {
@@ -50,7 +49,8 @@ export async function runDemo(agent: Agent, scenario: SlackThread[], { pauseMs =
     }
     calls.push(called);
 
-    console.log(`\n  ${purple('bot'.padEnd(18))} ${indent(await stream.text, ' '.repeat(21))}\n`);
+    const reply = await stream.text;
+    console.log(`\n  ${dim('↳ ')}${blue('@MergeMastraBot')}  ${indent(reply, '                    ')}  ${dim(`(${reply.length} chars)`)}\n`);
     console.log(dim('  ─────────────────────────────────────────\n'));
     await pause();
   }
