@@ -12,7 +12,7 @@ export const scenario: XThread[] = [
       { from: '@kev_codes', text: 'Same on my machine. Works fine on Node 22, breaks on 24.0 and 24.1' },
       { from: '@dana_ships', text: 'Happens on a fresh install too, so it’s not my setup' },
     ],
-    mention: { from: '@dana_ships', text: '@MergeMastraBot can you open an issue for this?' },
+    mention: { from: '@dana_ships', text: '@mergeapibot can you open an issue for this?' },
   },
   {
     posts: [
@@ -22,6 +22,6 @@ export const scenario: XThread[] = [
       { from: '@agentpatterns', text: 'Exactly. And you can revoke one user’s access without redeploying anything' },
       { from: '@sam_builds', text: 'Fair. Prototype with keys, move to a broker before real users touch it' },
     ],
-    mention: { from: '@priya_pm', text: '@MergeMastraBot summarize this thread' },
+    mention: { from: '@priya_pm', text: '@mergeapibot summarize this thread' },
   },
 ];

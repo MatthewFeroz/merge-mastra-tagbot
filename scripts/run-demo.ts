@@ -17,12 +17,12 @@ const indent = (s: string, pad: string) => s.split('\n').join(`\n${pad}`);
 export async function runDemo(agent: Agent, scenario: XThread[], { pauseMs = 800 } = {}) {
   const pause = () => new Promise(r => setTimeout(r, pauseMs));
   const mode = agentHandlerConfigured ? green('live, GitHub through Merge Agent Handler') : dim('dry run, no GitHub issues are created');
-  console.log(`\n${bold('𝕏  @MergeMastraBot')}  ${mode}\n`);
+  console.log(`\n${bold('𝕏  @mergeapibot')}  ${mode}\n`);
 
   const calls: string[][] = [];
   for (const thread of scenario) {
     thread.posts.forEach((p, i) => console.log(`  ${i === 0 ? '' : dim('↳ ')}${dim(p.from)}  ${p.text}`));
-    console.log(`  ${dim('↳ ')}${bold(thread.mention.from)}  ${thread.mention.text.replace('@MergeMastraBot', blue('@MergeMastraBot'))}\n`);
+    console.log(`  ${dim('↳ ')}${bold(thread.mention.from)}  ${thread.mention.text.replace('@mergeapibot', blue('@mergeapibot'))}\n`);
     await pause();
 
     const transcript = thread.posts.map(p => `${p.from}: ${p.text}`).join('\n');
@@ -50,7 +50,7 @@ export async function runDemo(agent: Agent, scenario: XThread[], { pauseMs = 800
 
     const reply = await stream.text;
     const length = reply.length > 280 ? red(`(${reply.length} chars, over X's 280 limit)`) : dim(`(${reply.length} chars)`);
-    console.log(`\n  ${dim('↳ ')}${blue('@MergeMastraBot')}  ${indent(reply, '                    ')}  ${length}\n`);
+    console.log(`\n  ${dim('↳ ')}${blue('@mergeapibot')}  ${indent(reply, '                    ')}  ${length}\n`);
     console.log(dim('  ─────────────────────────────────────────\n'));
     await pause();
   }

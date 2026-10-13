@@ -1,6 +1,6 @@
 # Merge × Mastra Bot
 
-Give your product its own @bot. Someone hits a bug, tags @MergeMastraBot in the thread on X, and the bot opens a GitHub issue and replies with the link. It's built with Mastra, runs its model through Merge Gateway, and reaches GitHub through Merge Agent Handler, so anyone on X can tag it but it can only ever open an issue.
+Give your product its own @bot. Someone hits a bug, tags @mergeapibot in the thread on X, and the bot opens a GitHub issue and replies with the link. It's built with Mastra, runs its model through Merge Gateway, and reaches GitHub through Merge Agent Handler, so anyone on X can tag it but it can only ever open an issue.
 
 ```bash
 npm install
