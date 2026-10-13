@@ -2,52 +2,43 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { agentHandlerConfigured, callAgentHandler } from './agent-handler';
 
-// The bot's one action. The model fills in a title, description and priority, and the tool
-// builds the full Agent Handler request. Without AGENT_HANDLER_* set it's a dry run.
+// The bot's one action. The model fills in a title, body and labels, and the tool builds the
+// full Agent Handler request. Without AGENT_HANDLER_* set it's a dry run.
 
 let dryRunCount = 0;
 
-export const createTicket = createTool({
-  id: 'create-ticket',
-  description: 'Create a Linear issue for a bug someone reported on X.',
+export const createIssue = createTool({
+  id: 'create-issue',
+  description: 'Open a GitHub issue for a bug someone reported on X.',
   inputSchema: z.object({
-    title: z.string().max(90).describe('Short, specific title, e.g. "CSV export times out for files over 50MB"'),
-    description: z
+    title: z.string().max(90).describe('Short, specific title, e.g. "CLI crashes on Node 24 with ERR_REQUIRE_ESM"'),
+    body: z
       .string()
-      .describe('Markdown with sections for what’s happening, who reported it on X, and details from the thread'),
-    priority: z.enum(['urgent', 'high', 'medium', 'low']),
+      .describe('Markdown with sections for what’s happening, steps or details from the thread, and who reported it on X'),
+    labels: z.array(z.enum(['bug', 'regression', 'docs', 'feature request'])).max(2),
   }),
-  outputSchema: z.object({ id: z.string(), title: z.string(), url: z.string() }),
-  execute: async ({ title, description, priority }) => {
+  outputSchema: z.object({ number: z.number(), url: z.string() }),
+  execute: async ({ title, body, labels }) => {
+    const owner = process.env.GITHUB_OWNER ?? 'your-org';
+    const repo = process.env.GITHUB_REPO ?? 'your-repo';
     if (!agentHandlerConfigured) {
-      return { id: `DEMO-${++dryRunCount}`, title, url: '(dry run, not sent to Linear)' };
+      const number = ++dryRunCount;
+      return { number, url: `https://github.com/${owner}/${repo}/issues/${number}` };
     }
-    const result = await callAgentHandler('linear__create_issue', {
-      ...nulls(CREATE_ISSUE_FIELDS),
-      team_id: requireEnv('LINEAR_TEAM_ID'),
+    const issue = await callAgentHandler('github__create_issue', {
+      owner,
+      repo,
       title,
-      description,
-      priority: { urgent: 1, high: 2, medium: 3, low: 4 }[priority],
+      body,
+      // "from-x" marks everything the bot opened, so it's easy to filter.
+      labels: ['from-x', ...labels],
+      assignee: null,
+      assignees: null,
+      milestone: null,
+      type: null,
     });
-    const issue = result?.issue ?? result;
-    return { id: issue.identifier ?? issue.id, title: issue.title ?? title, url: issue.url ?? '' };
+    return { number: issue.number, url: issue.html_url ?? issue.url };
   },
 });
 
-export const tagbotTools = { createTicket };
-
-// Agent Handler marks every field required and lets optional ones be null.
-const CREATE_ISSUE_FIELDS = [
-  'assignee_id', 'estimate', 'state_id', 'label_ids', 'project_id', 'cycle_id', 'parent_id', 'due_date',
-  'subscriber_ids',
-];
-
-function nulls(keys: string[]) {
-  return Object.fromEntries(keys.map(k => [k, null]));
-}
-
-function requireEnv(name: string) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Set ${name} in .env`);
-  return value;
-}
+export const tagbotTools = { createIssue };

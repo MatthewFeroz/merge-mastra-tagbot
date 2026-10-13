@@ -22,7 +22,7 @@ function connect() {
 }
 
 /**
- * Calls one Agent Handler tool, e.g. `linear__create_issue`. Merge checks it against the
+ * Calls one Agent Handler tool, e.g. `github__create_issue`. Merge checks it against the
  * Tool Pack, uses the Registered User's credentials, and records it in Tool Call Logs.
  * Returns the tool's JSON result.
  */

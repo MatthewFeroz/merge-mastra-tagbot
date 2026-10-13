@@ -16,7 +16,7 @@ const indent = (s: string, pad: string) => s.split('\n').join(`\n${pad}`);
 /** Plays each X thread through the agent and prints what it did. Returns the tools called per thread. */
 export async function runDemo(agent: Agent, scenario: XThread[], { pauseMs = 800 } = {}) {
   const pause = () => new Promise(r => setTimeout(r, pauseMs));
-  const mode = agentHandlerConfigured ? green('live, Linear through Merge Agent Handler') : dim('dry run, Linear is simulated');
+  const mode = agentHandlerConfigured ? green('live, GitHub through Merge Agent Handler') : dim('dry run, no GitHub issues are created');
   console.log(`\n${bold('𝕏  @MergeMastraBot')}  ${mode}\n`);
 
   const calls: string[][] = [];
@@ -39,7 +39,7 @@ export async function runDemo(agent: Agent, scenario: XThread[], { pauseMs = 800
       } else if (chunk.type === 'tool-result') {
         const r = chunk.payload.result as any;
         if (chunk.payload.isError) console.log(`      ${red('✗ failed')} ${dim(short(r, 200))}`);
-        else if (r?.id) console.log(`      ${green('✓ created in Linear')} ${r.id} ${dim(r.url)}`);
+        else if (r?.url) console.log(`      ${green('✓ opened issue')} #${r.number} ${dim(agentHandlerConfigured ? r.url : `${r.url} (dry run, not created)`)}`);
       } else if (chunk.type === 'tool-error') {
         console.log(`      ${red('✗ failed')} ${dim(String((chunk.payload as any).error?.message ?? chunk.payload))}`);
       } else if (chunk.type === 'error') {
@@ -55,6 +55,6 @@ export async function runDemo(agent: Agent, scenario: XThread[], { pauseMs = 800
     await pause();
   }
 
-  if (agentHandlerConfigured) console.log(dim('Every Linear call is in Merge Agent Handler → Tool Call Logs.'));
+  if (agentHandlerConfigured) console.log(dim('Every GitHub call is in Merge Agent Handler → Tool Call Logs.'));
   return calls;
 }

@@ -34,7 +34,7 @@ const call = (toolName: string, input: unknown) => ({
   ]),
 });
 
-// Does what a good model should: file the bug report, summarize without tools.
+// Does what a good model should: open the issue, summarize without tools.
 const scriptedModel = {
   specificationVersion: 'v2',
   provider: 'scripted',
@@ -50,13 +50,13 @@ const scriptedModel = {
 
     const calledTool = prompt.slice(lastUser + 1).some(m => m.role === 'tool');
     if (!calledTool) {
-      return call('createTicket', {
-        title: 'CSV export times out for files over 50MB',
-        description: '**What’s happening** Exports over ~50MB time out since Tuesday’s deploy.\n**Reported by** @dana_ships and @kev_codes on X',
-        priority: 'high',
+      return call('createIssue', {
+        title: 'CLI crashes on Node 24 with ERR_REQUIRE_ESM',
+        body: '**What’s happening** The CLI throws ERR_REQUIRE_ESM on start with Node 24.\n**Reported by** @dana_ships and @kev_codes on X',
+        labels: ['bug', 'regression'],
       });
     }
-    return say('Logged with the team, thanks for flagging it. They’re looking at large CSV exports timing out.');
+    return say('Thanks for flagging it! Opened an issue here https://github.com/your-org/your-repo/issues/1');
   },
 };
 
@@ -69,7 +69,7 @@ const agent = new Agent({
 });
 
 const calls = await runDemo(agent, scenario, { pauseMs: 0 });
-const expected = [['createTicket'], []];
+const expected = [['createIssue'], []];
 if (JSON.stringify(calls) !== JSON.stringify(expected)) {
   console.error(`\x1b[31mSmoke test failed\nexpected ${JSON.stringify(expected)}\ngot      ${JSON.stringify(calls)}\x1b[0m`);
   process.exit(1);

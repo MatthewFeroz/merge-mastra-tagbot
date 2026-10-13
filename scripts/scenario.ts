@@ -8,11 +8,11 @@ export type XThread = {
 export const scenario: XThread[] = [
   {
     posts: [
-      { from: '@dana_ships', text: 'CSV exports have been timing out all morning. Tried three times. Board meeting Thursday and I need this data 😩' },
-      { from: '@kev_codes', text: 'Same here. Anything over about 50MB just dies, smaller files go through fine' },
-      { from: '@dana_ships', text: 'Started after the update on Tuesday I think' },
+      { from: '@dana_ships', text: 'Upgraded to Node 24 this morning and the CLI won’t even start. Just throws ERR_REQUIRE_ESM 😩' },
+      { from: '@kev_codes', text: 'Same on my machine. Works fine on Node 22, breaks on 24.0 and 24.1' },
+      { from: '@dana_ships', text: 'Happens on a fresh install too, so it’s not my setup' },
     ],
-    mention: { from: '@dana_ships', text: '@MergeMastraBot can you turn this into a ticket for the team?' },
+    mention: { from: '@dana_ships', text: '@MergeMastraBot can you open an issue for this?' },
   },
   {
     posts: [
