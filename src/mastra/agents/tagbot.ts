@@ -20,7 +20,7 @@ export const tagbot = new Agent({
   id: 'tagbot',
   name: 'Merge × Mastra Bot',
   instructions: tagbotInstructions,
-  model: process.env.MODEL ?? 'anthropic/claude-sonnet-4-6',
+  model: process.env.MODEL ?? 'merge-gateway/anthropic/claude-sonnet-4-6',
   tools: tagbotTools,
   channels: xEnabled ? { adapters: { x: createXAdapter() } } : undefined,
 });

@@ -1,10 +1,10 @@
 # Merge × Mastra Bot
 
-A Grok-style bot for X that can act on what it reads. Someone tags it in a thread, and it either summarizes the thread or turns it into a ticket in the company's Linear. It's built with Mastra and reaches Linear through Merge Agent Handler, so anyone on X can tag it but it can only ever do what Merge allows.
+A Grok-style bot for X that can act on what it reads. Someone tags it in a thread, and it either summarizes the thread or turns it into a ticket in the company's Linear. It's built with Mastra, runs its model through Merge Gateway, and reaches Linear through Merge Agent Handler, so anyone on X can tag it but it can only ever do what Merge allows.
 
 ```bash
 npm install
-cp .env.example .env   # add ANTHROPIC_API_KEY
+cp .env.example .env   # add MERGE_GATEWAY_API_KEY
 npm run demo
 ```
 
