@@ -17,7 +17,10 @@ function connect() {
     );
     await c.connect(new StreamableHTTPClientTransport(url, { requestInit: { headers: { Authorization: `Bearer ${API_KEY}` } } }));
     return c;
-  })();
+  })().catch(error => {
+    client = undefined;
+    throw error;
+  });
   return client;
 }
 

@@ -3,3 +3,4 @@ node_modules
 .mastra
 out
 *.db*
+.env.production

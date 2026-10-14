@@ -56,7 +56,7 @@ const scriptedModel = {
         labels: ['bug', 'regression'],
       });
     }
-    return say('Thanks for flagging it! Opened an issue here https://github.com/your-org/your-repo/issues/1');
+    return say('Issue preview only. No GitHub issue was created. The report covers the Node 24 CLI crash and ERR_REQUIRE_ESM.');
   },
 };
 
