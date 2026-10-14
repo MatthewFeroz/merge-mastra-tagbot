@@ -93,3 +93,15 @@ After deploying, register `https://<your-host>/webhooks/x` in X and subscribe @m
 - [ ] Complete the October 16 and 19 dry runs for the October 20 workshop.
 
 The workshop deliverables above come from Brandon Barros's `Mastra-Merge-Gameplan.pdf`. Deployment, account invitations, and a recorded live demo remain separate steps.
+
+## Spam limits
+
+Anyone on X can tag the bot, so it limits what one person, and everyone together, can trigger. The counts live in the database, so they hold across restarts and redeploys.
+
+| Limit | Default | What happens |
+|---|---|---|
+| Issues per person per hour | 3 | The bot replies that they've hit the limit and opens nothing |
+| Issues per day, everyone | 25 | The bot replies that it's done for the day and opens nothing |
+| Mentions per person per hour | 10 | The bot ignores further mentions without replying, so spam can't spend X or model credit |
+
+Requests that end without an issue don't count toward the issue limits. Change the numbers with `TAGBOT_ISSUES_PER_AUTHOR_PER_HOUR`, `TAGBOT_ISSUES_PER_DAY` and `TAGBOT_MENTIONS_PER_AUTHOR_PER_HOUR`.
