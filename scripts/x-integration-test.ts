@@ -10,7 +10,7 @@ import { Mastra } from '@mastra/core';
 import { ConsoleLogger } from 'chat';
 import { MentionStore } from '../src/mastra/mention-store';
 import { ThreadXAdapter } from '../src/mastra/x-adapter';
-import { asksForIssue, createMentionHandler, createVerifiedXRequest, replySchema, type XRequest } from '../src/mastra/x-handler';
+import { asksForIssue, fitReply, createMentionHandler, createVerifiedXRequest, replySchema, type XRequest } from '../src/mastra/x-handler';
 import { executeIssue, issueInputSchema } from '../src/mastra/tools';
 import { RequestContext } from '@mastra/core/request-context';
 
@@ -115,6 +115,16 @@ try {
   assert.equal(asksForIssue('@mergeapibot open a GitHub issue'), true);
   assert.equal(asksForIssue('@mergeapibot summarize this thread'), false);
   assert.equal(asksForIssue("don't open an issue"), false);
+  for (const ask of ['@mergeapibot file this 🫡', '@mergeapibot report this', '@mergeapibot turn this into an issue', '@mergeapibot make this a ticket', '@mergeapibot log it']) {
+    assert.equal(asksForIssue(ask), true, ask);
+  }
+  for (const notAsk of ['@mergeapibot what do you think of this?', "@mergeapibot don't file this", '@mergeapibot this is a bug']) {
+    assert.equal(asksForIssue(notAsk), false, notAsk);
+  }
+  const long = 'This thread is about a terminal toolbar that covers the first line. '.repeat(6);
+  assert.ok(Array.from(fitReply(long)).length <= 240);
+  assert.equal(replySchema.safeParse(fitReply(long)).success, true);
+  assert.equal(fitReply('short reply'), 'short reply');
   assert.equal(issueInputSchema.safeParse({ ...issueInput, title: ' ' }).success, false);
   assert.equal(replySchema.safeParse('x'.repeat(241)).success, false);
 
@@ -140,7 +150,7 @@ try {
   assert.match(sent[1].text, /CLI crashes/);
   assert.equal(sent[1].reply.in_reply_to_tweet_id, '103');
   await deliver(restarted, '104');
-  assert.match(sent[2].text, /couldn't finish/);
+  assert.ok(sent[2].text.endsWith('…')); // An overlong summary is trimmed, not turned into an error.
   assert.ok(sent.every(post => Array.from(post.text).length <= 240));
   const bounded = await restarted.readReplyChain('x:post:100', '102', 2);
   assert.deepEqual(bounded.messages.map(m => m.id), ['100', '102']);
