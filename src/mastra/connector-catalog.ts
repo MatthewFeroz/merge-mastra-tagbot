@@ -1,5 +1,6 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
+import { isVerifiedXRequest } from './x-handler';
 
 // Merge publishes the Agent Handler connector catalog as Markdown. The bot looks names up here
 // instead of answering from memory, so a public reply never invents what Merge supports.
@@ -55,8 +56,11 @@ export const checkConnector = createTool({
     matches: z.array(z.object({ name: z.string(), url: z.string() })),
     catalogUrl: z.string(),
   }),
-  execute: async ({ name }) => {
+  execute: async ({ name }, context) => {
     const { supported, matches } = findConnectors(await loadCatalog(), name);
+    // Shown on the /demo timeline. Only the signed X handler creates a verified request.
+    const request = context?.requestContext?.get('x-request');
+    if (isVerifiedXRequest(request)) request.catalogLookup = { query: name, found: supported };
     return { query: name, supported, matches, catalogUrl: 'https://docs.merge.dev/merge-agent-handler/connectors' };
   },
 });

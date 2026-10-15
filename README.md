@@ -30,6 +30,10 @@ The public bot has a narrow action surface.
 
 The bot never says from memory what Merge supports. When someone asks whether Merge connects to a tool, it calls `checkConnector`, which looks the name up in Merge's public connector catalog (`docs.merge.dev/merge-agent-handler/connectors.md`) and replies with the link, or offers to file a feature request. The catalog is cached for an hour and costs no context until someone asks. The lookup is read-only and available on every mention. `createIssue` stays available only when the latest mention asks for an issue.
 
+## Blocked requests
+
+Merge Gateway screens every model call for prompt injection. When it blocks a mention, the model never runs, no tool can run, and the bot replies with a fixed refusal. `/demo` shows the run as Blocked. Other Gateway errors are ordinary failures. `npm test` covers both.
+
 ## Dry run or live
 
 The CLI demo and Studio are dry runs by default, even when Agent Handler credentials are present. The model reads each thread and decides, but the tool returns an issue preview with `dryRun: true`. Set `DEMO_LIVE_ACTIONS=true` only for an intentional live CLI demo. Keep it false on a public server, since it also enables writes from Studio/API runs.

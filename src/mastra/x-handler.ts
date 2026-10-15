@@ -13,6 +13,7 @@ export type XRequest = {
   issue?: { number: number; url: string };
   recordIssue: (url: string) => Promise<void>;
   demo?: DemoRecorder;
+  catalogLookup?: { query: string; found: boolean };
 };
 const verifiedRequests = new WeakSet<object>();
 export function createVerifiedXRequest(request: XRequest) {
@@ -22,6 +23,12 @@ export function createVerifiedXRequest(request: XRequest) {
 export function isVerifiedXRequest(request: unknown): request is XRequest {
   return typeof request === 'object' && request !== null && verifiedRequests.has(request);
 }
+
+/** Thrown by the runner when Merge Gateway refuses the request, e.g. as a prompt injection attempt. */
+export class BlockedRequestError extends Error {
+  constructor() { super('Blocked by Merge Gateway'); this.name = 'BlockedRequestError'; }
+}
+export const blockedReply = "I can't help with that one. Merge Gateway flagged it as a prompt injection attempt, so it never reached the model.";
 
 export const replySchema = z.string().trim().min(1).refine(text => Array.from(text).length <= 240, 'Reply exceeds 240 characters');
 export function asksForIssue(text: string) {
@@ -117,15 +124,25 @@ export function createMentionHandler(adapter: ThreadXAdapter, run: Runner, store
       });
       stage = 'agent';
       await demo.record('agent', 'running');
-      const text = await run(prompt, ctx.requestContext, request.allowIssueCreation);
-      await demo.record('agent', 'complete');
+      let text = '';
+      let blocked = false;
+      try {
+        text = await run(prompt, ctx.requestContext, request.allowIssueCreation);
+      } catch (error) {
+        if (!(error instanceof BlockedRequestError)) throw error;
+        blocked = true;
+      }
+      const lookup = request.catalogLookup;
+      await demo.record('agent', blocked ? 'blocked' : 'complete', lookup ? { catalogQuery: lookup.query.slice(0, 60), catalogFound: lookup.found } : {});
       if (!request.issueAttempted) {
-        const reason = allowIssueCreation ? 'no_issue' : 'summary';
+        const reason = blocked ? 'blocked' : allowIssueCreation ? 'no_issue' : 'summary';
         await demo.record('handler', 'skipped', { reason });
         await demo.record('issue', 'skipped', { reason });
       }
       // The live issue URL is server-verified, never copied from model-generated prose.
-      const reply = request.issue
+      const reply = blocked
+        ? blockedReply
+        : request.issue
         ? `Thanks for the report! Opened an issue: ${request.issue.url}`
         : request.allowIssueCreation
           ? 'No issue was created. Please include the bug details and reproduction steps in a new mention.'
@@ -136,7 +153,7 @@ export function createMentionHandler(adapter: ThreadXAdapter, run: Runner, store
       const posted = await adapter.replyToMention(thread.id, message.id, replySchema.parse(reply));
       await demo.record('reply', 'complete', { replyUrl: `https://x.com/i/status/${posted.id}` });
       await ledger.finish(message.id, 'completed', posted.id);
-      await demo.finish(request.issueAttempted && !request.issue ? 'failed' : 'completed');
+      await demo.finish(blocked ? 'blocked' : request.issueAttempted && !request.issue ? 'failed' : 'completed');
     } catch {
       ctx.mastra?.getLogger().warn('X mention failed; retained for manual review', {
         mentionId: message.id, issueRecorded: Boolean(request?.issue), replyAttempted,

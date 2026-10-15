@@ -1,10 +1,18 @@
 import { Agent } from '@mastra/core/agent';
 import { tagbotTools } from '../tools';
 import { botUserName, createThreadXAdapter } from '../x-adapter';
-import { createMentionHandler } from '../x-handler';
+import { BlockedRequestError, createMentionHandler } from '../x-handler';
 
 const xEnabled = Boolean(process.env.X_CONSUMER_SECRET && (process.env.X_USER_ACCESS_TOKEN || (process.env.X_CLIENT_ID && process.env.X_REFRESH_TOKEN)));
 export const xAdapter = xEnabled ? createThreadXAdapter() : undefined;
+
+/** Merge Gateway answers a prompt injection attempt with a blocked_by_pi_protection error. */
+export function isGatewayBlock(payload: unknown) {
+  const error = (payload as { error?: { responseBody?: unknown; data?: unknown } } | undefined)?.error;
+  const body = typeof error?.responseBody === 'string' ? error.responseBody : JSON.stringify(error?.data ?? '');
+  // Only prompt injection blocks get the injection reply. Other Gateway errors fail as usual.
+  return body.includes('blocked_by_pi_protection');
+}
 
 export const tagbotInstructions = `You are @${botUserName} on X, the public bot for an open source project. People tag you in a thread on X, and the thread is your context.
 
@@ -40,6 +48,11 @@ export const tagbot = new Agent({
       onMention: createMentionHandler(xAdapter, async (prompt, requestContext, allowIssue): Promise<string> => {
         // Only a mention that explicitly asks for an issue can reach createIssue. The catalog lookup is read-only.
         const result = await tagbot.stream(prompt, { requestContext, maxSteps: 3, activeTools: allowIssue ? ['createIssue', 'checkConnector'] : ['checkConnector'] });
+        let blocked = false;
+        for await (const chunk of result.fullStream) {
+          if (chunk.type === 'error' && isGatewayBlock(chunk.payload)) blocked = true;
+        }
+        if (blocked) throw new BlockedRequestError();
         return result.text;
       }),
     },

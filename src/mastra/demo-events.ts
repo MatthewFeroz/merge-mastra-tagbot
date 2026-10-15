@@ -6,7 +6,7 @@ const issueUrl = z.url().refine(value => /^https:\/\/github\.com\/[\w.-]+\/[\w.-
 export const demoStageSchema = z.enum(['mention', 'thread', 'agent', 'handler', 'issue', 'reply']);
 export const demoEventSchema = z.object({
   stage: demoStageSchema,
-  state: z.enum(['running', 'complete', 'skipped', 'failed']),
+  state: z.enum(['running', 'complete', 'skipped', 'failed', 'blocked']),
   at: z.iso.datetime(),
   details: z.object({
     postCount: z.number().int().min(0).max(10).optional(),
@@ -15,7 +15,10 @@ export const demoEventSchema = z.object({
     issueNumber: z.number().int().positive().optional(),
     issueUrl: issueUrl.optional(),
     replyUrl: xUrl.optional(),
-    reason: z.enum(['author', 'daily', 'mention', 'no_issue', 'summary']).optional(),
+    reason: z.enum(['author', 'daily', 'mention', 'no_issue', 'summary', 'blocked']).optional(),
+    // The connector name the agent looked up in Merge's public catalog, and whether it was listed.
+    catalogQuery: z.string().trim().min(1).max(60).optional(),
+    catalogFound: z.boolean().optional(),
   }).strict().default({}),
 }).strict();
 export const demoRunSchema = z.object({
@@ -23,7 +26,7 @@ export const demoRunSchema = z.object({
   author: z.string().min(1).max(60),
   sourceUrl: xUrl,
   kind: z.enum(['issue', 'summary']),
-  status: z.enum(['running', 'completed', 'failed', 'limited']),
+  status: z.enum(['running', 'completed', 'failed', 'limited', 'blocked']),
   startedAt: z.iso.datetime(),
   finishedAt: z.iso.datetime().optional(),
   events: z.array(demoEventSchema).max(32),
