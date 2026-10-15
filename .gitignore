@@ -4,3 +4,4 @@ node_modules
 out
 *.db*
 .env.production
+web/demo.html

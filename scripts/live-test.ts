@@ -6,7 +6,7 @@ import { replySchema } from '../src/mastra/x-handler';
 import { Agent } from '@mastra/core/agent';
 import { Mastra } from '@mastra/core';
 import { LibSQLStore } from '@mastra/libsql';
-import { createThreadXAdapter } from '../src/mastra/x-adapter';
+import { botUserName, createThreadXAdapter } from '../src/mastra/x-adapter';
 import { databaseAuthToken, databaseUrl } from '../src/mastra/database';
 
 process.env.DEMO_LIVE_ACTIONS = 'false';
@@ -51,7 +51,7 @@ await check('Agent Handler connection and restricted tool catalog', async () => 
   }
 });
 
-await check('X managed refresh and @mergeapibot identity (read-only)', async () => {
+await check('X managed refresh and bot identity (read-only)', async () => {
   assert.ok(process.env.X_CONSUMER_SECRET);
   const adapter = createThreadXAdapter();
   const agent = new Agent({
@@ -66,8 +66,8 @@ await check('X managed refresh and @mergeapibot identity (read-only)', async () 
   }) });
   await agent.getChannels()!.initialize(mastra);
   const identity = await adapter.verifyBotIdentity();
-  assert.equal(identity.username.toLowerCase(), 'mergeapibot');
-  console.log('X managed OAuth authenticated as @mergeapibot.');
+  assert.equal(identity.username.toLowerCase(), botUserName.toLowerCase());
+  console.log(`X managed OAuth authenticated as @${botUserName}.`);
 });
 
 if (!process.argv.includes('--connections-only')) {

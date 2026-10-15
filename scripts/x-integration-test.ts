@@ -139,16 +139,27 @@ try {
   assert.equal(sent.length, 1);
   assert.equal(sent[0].text, `Thanks for the report! Opened an issue: ${issueUrl}`);
   assert.equal(sent[0].reply.in_reply_to_tweet_id, '102');
+  const issueRun = (await store.listDemoRuns())[0];
+  assert.equal(issueRun.status, 'completed');
+  assert.deepEqual(issueRun.events.filter(e => e.state === 'complete').map(e => e.stage), ['mention', 'thread', 'handler', 'issue', 'agent', 'reply']);
+  assert.equal(issueRun.events.find(e => e.stage === 'handler')?.details.toolName, 'github__create_issue');
+  assert.equal(issueRun.events.find(e => e.stage === 'issue')?.details.issueUrl, issueUrl);
+  assert.equal(issueRun.events.find(e => e.stage === 'thread' && e.state === 'complete')?.details.postCount, 3);
+  assert.equal(JSON.stringify(issueRun).includes('ERR_REQUIRE_ESM'), false); // No thread text or prompt in the feed.
   await deliver(adapter, '102');
   assert.equal(calls, 1);
   const restarted = await start();
   await deliver(restarted, '102');
   assert.equal(calls, 1);
   assert.equal(sent.length, 1);
+  assert.deepEqual(await new MentionStore(db).listDemoRuns(), [issueRun]); // Persistent, duplicate-free events.
   await deliver(restarted, '103');
   assert.equal(calls, 1); // Earlier thread instruction cannot authorize a write.
   assert.match(sent[1].text, /CLI crashes/);
   assert.equal(sent[1].reply.in_reply_to_tweet_id, '103');
+  const summaryRun = (await store.listDemoRuns()).find(r => r.id === '103')!;
+  assert.equal(summaryRun.status, 'completed');
+  assert.deepEqual(summaryRun.events.filter(e => e.state === 'skipped').map(e => e.stage), ['handler', 'issue']);
   await deliver(restarted, '104');
   assert.ok(sent[2].text.endsWith('…')); // An overlong summary is trimmed, not turned into an error.
   assert.ok(sent.every(post => Array.from(post.text).length <= 240));
@@ -191,7 +202,12 @@ try {
   await deliver(await start(), '105');
   assert.equal(sent.length, beforeRetry);
   assert.equal(calls, 2);
-  console.log('X integration passed: signed webhook, ancestry, one issue, fixed repo, source link, summary-only, restart dedupe, reply limit, encrypted OAuth persistence.');
+  const failedRun = (await store.listDemoRuns()).find(r => r.id === '105')!;
+  assert.equal(failedRun.status, 'failed');
+  assert.equal(failedRun.events.at(-1)?.stage, 'reply');
+  assert.equal(failedRun.events.at(-1)?.state, 'failed');
+  assert.equal(failedRun.events.find(e => e.stage === 'issue')?.details.issueUrl, issueUrl);
+  console.log('X integration passed: signed webhook, ancestry, one issue, fixed repo, source link, summary-only, restart dedupe, reply limit, encrypted OAuth persistence, request events.');
 } finally {
   if (originalOwner === undefined) delete process.env.GITHUB_OWNER; else process.env.GITHUB_OWNER = originalOwner;
   if (originalRepo === undefined) delete process.env.GITHUB_REPO; else process.env.GITHUB_REPO = originalRepo;

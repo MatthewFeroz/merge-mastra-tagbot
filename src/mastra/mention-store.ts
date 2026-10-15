@@ -1,5 +1,6 @@
 import { createClient, type Client } from '@libsql/client';
 import { databaseAuthToken, databaseUrl } from './database';
+import { demoRunSchema, type DemoRun, type DemoEvent } from './demo-events';
 
 /** Persistent claim before any external action. Failed/incomplete claims require manual review. */
 export class MentionStore {
@@ -17,6 +18,13 @@ export class MentionStore {
         mention_id TEXT NOT NULL, kind TEXT NOT NULL, author_id TEXT NOT NULL, created_at TEXT NOT NULL,
         PRIMARY KEY (mention_id, kind)
       )`,
+      `CREATE TABLE IF NOT EXISTS tagbot_demo_runs (
+        id TEXT PRIMARY KEY, data TEXT NOT NULL, started_at TEXT NOT NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS tagbot_demo_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL, data TEXT NOT NULL
+      )`,
+      'CREATE INDEX IF NOT EXISTS tagbot_demo_events_run ON tagbot_demo_events (run_id, id)',
     ], 'write');
   }
 
@@ -60,6 +68,44 @@ export class MentionStore {
 
   async finish(id: string, status: 'completed' | 'failed' | 'limited', replyId?: string) {
     await this.db.execute({ sql: 'UPDATE tagbot_mentions SET status = ?, reply_id = ? WHERE id = ?', args: [status, replyId ?? null, id] });
+  }
+
+  async startDemoRun(run: DemoRun) {
+    await this.initialize();
+    await this.db.batch([
+      { sql: 'INSERT INTO tagbot_demo_runs VALUES (?, ?, ?)', args: [run.id, JSON.stringify(run), run.startedAt] },
+      'DELETE FROM tagbot_demo_runs WHERE id NOT IN (SELECT id FROM tagbot_demo_runs ORDER BY started_at DESC, id DESC LIMIT 50)',
+      'DELETE FROM tagbot_demo_events WHERE run_id NOT IN (SELECT id FROM tagbot_demo_runs)',
+    ], 'write');
+  }
+
+  async recordDemoEvent(id: string, event: DemoEvent) {
+    await this.initialize();
+    await this.db.execute({
+      sql: 'INSERT INTO tagbot_demo_events (run_id, data) SELECT ?, ? WHERE EXISTS (SELECT 1 FROM tagbot_demo_runs WHERE id = ?) AND (SELECT COUNT(*) FROM tagbot_demo_events WHERE run_id = ?) < 32',
+      args: [id, JSON.stringify(event), id, id],
+    });
+  }
+
+  async finishDemoRun(id: string, status: Exclude<DemoRun['status'], 'running'>, finishedAt: string) {
+    await this.db.execute({
+      sql: "UPDATE tagbot_demo_runs SET data = json_set(data, '$.status', ?, '$.finishedAt', ?) WHERE id = ?",
+      args: [status, finishedAt, id],
+    });
+  }
+
+  async listDemoRuns(): Promise<DemoRun[]> {
+    await this.initialize();
+    const runs = await this.db.execute('SELECT id, data FROM tagbot_demo_runs ORDER BY started_at DESC, id DESC LIMIT 20');
+    if (!runs.rows.length) return [];
+    const events = await this.db.execute({
+      sql: `SELECT run_id, data FROM tagbot_demo_events WHERE run_id IN (${runs.rows.map(() => '?').join(',')}) ORDER BY id`,
+      args: runs.rows.map(row => String(row.id)),
+    });
+    return runs.rows.map(row => demoRunSchema.parse({
+      ...JSON.parse(String(row.data)),
+      events: events.rows.filter(event => event.run_id === row.id).map(event => JSON.parse(String(event.data))),
+    }));
   }
 
   async getToken<T>(key: string): Promise<T | null> {

@@ -60,6 +60,14 @@ The bot does not subscribe to conversations or answer DMs. X replies use the men
 
 OAuth refresh tokens rotate. The X adapter stores rotated tokens in the same LibSQL database rather than Mastra's transient cache. Set `X_ENCRYPTION_KEY` to a base64-encoded 32-byte key, generated with `openssl rand -base64 32`, and preserve it across deployments. Keep the database and environment private.
 
+## Live request view
+
+Open `/demo` on the bot's server and keep X beside it. Click **Connect live** and enter the project's `TAGBOT_API_TOKEN`. The page polls the authenticated `/demo/runs` feed once a second, showing the mention, thread read, agent turn, Agent Handler call, verified issue and X reply. Each step shows elapsed time since the mention was claimed. The agent timer includes its tool call, so it is not a separate measure of model inference latency.
+
+The token stays in tab memory. The page cannot initiate bot actions. Events contain stage/status metadata, the author, and verified links, without prompts, thread bodies, credentials or raw provider errors. The database retains the latest 50 requests, and the feed returns the latest 20. Existing mentions are not backfilled. Only signed mentions processed after this version starts will appear.
+
+For a standalone HTML file, run `npm run demo:export`. Open `web/demo.html` to replay local issue, summary and tool failure examples. Sample replay sends no external requests. Live mode requires opening `/demo` on the bot server with `TAGBOT_API_TOKEN` configured.
+
 ## Mastra Platform setup
 
 This repository uses Mastra's standard build output:

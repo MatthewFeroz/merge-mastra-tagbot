@@ -45,7 +45,10 @@ export async function executeIssue(
     }
     if (!dependencies.configured || !process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) throw new Error('Issue creation is not configured');
     if (request) request.issueAttempted = true;
-    const issue = await dependencies.call('github__create_issue', {
+    await request?.demo?.record('handler', 'running', { toolName: 'github__create_issue' });
+    let issue;
+    try {
+      issue = await dependencies.call('github__create_issue', {
       owner,
       repo,
       title,
@@ -56,14 +59,27 @@ export async function executeIssue(
       assignees: null,
       milestone: null,
       type: null,
-    });
-    const number = z.number().int().positive().parse(issue.number);
-    const url = `https://github.com/${owner}/${repo}/issues/${number}`;
-    const returnedUrl = issue.html_url ?? issue.url;
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/issues/${number}`;
-    if (returnedUrl !== url && returnedUrl !== apiUrl) throw new Error('Unexpected issue destination from Agent Handler');
+      });
+      await request?.demo?.record('handler', 'complete', { toolName: 'github__create_issue' });
+    } catch (error) {
+      await request?.demo?.record('handler', 'failed', { toolName: 'github__create_issue' });
+      throw error;
+    }
+    let number: number;
+    let url: string;
+    try {
+      number = z.number().int().positive().parse(issue.number);
+      url = `https://github.com/${owner}/${repo}/issues/${number}`;
+      const returnedUrl = issue.html_url ?? issue.url;
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/issues/${number}`;
+      if (returnedUrl !== url && returnedUrl !== apiUrl) throw new Error('Unexpected issue destination from Agent Handler');
+    } catch (error) {
+      await request?.demo?.record('issue', 'failed');
+      throw error;
+    }
     if (request) {
       request.issue = { number, url };
+      await request.demo?.record('issue', 'complete', { issueNumber: number, issueUrl: url });
       await request.recordIssue(url);
     }
     return { number, url, dryRun: false };

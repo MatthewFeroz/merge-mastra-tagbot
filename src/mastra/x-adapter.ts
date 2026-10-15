@@ -71,7 +71,7 @@ export class ThreadXAdapter extends XAdapter {
   async verifyBotIdentity() {
     const result = await this.xApiFetch<{ id: string; username: string }>('/2/users/me?user.fields=username', 'GET');
     const identity = this.requireData(result, 'verify bot identity');
-    if (identity.username.toLowerCase() !== 'mergeapibot') throw new Error('X credentials do not belong to @mergeapibot');
+    if (identity.username.toLowerCase() !== botUserName.toLowerCase()) throw new Error(`X credentials do not belong to @${botUserName}`);
     return identity;
   }
 
@@ -87,6 +87,9 @@ export class ThreadXAdapter extends XAdapter {
   }
 }
 
+// The bot's X handle, without the @. Replies and identity checks use it.
+export const botUserName = (process.env.X_BOT_USERNAME || 'mergeapibot').replace(/^@/, '');
+
 export function createThreadXAdapter() {
   if (process.env.X_CLIENT_ID && process.env.X_REFRESH_TOKEN && !process.env.X_ENCRYPTION_KEY) {
     throw new Error('Set X_ENCRYPTION_KEY before enabling managed X OAuth refresh');
@@ -100,6 +103,6 @@ export function createThreadXAdapter() {
     clientSecret: process.env.X_CLIENT_SECRET,
     refreshToken: process.env.X_REFRESH_TOKEN,
     encryptionKey: process.env.X_ENCRYPTION_KEY,
-    userName: 'mergeapibot',
+    userName: botUserName,
   });
 }

@@ -1,12 +1,13 @@
 // One-time OAuth 2.0 sign-in for the bot account. Opens X's consent page, catches the
 // redirect on http://127.0.0.1:3000/callback, and writes the bot's tokens into .env.
 //   npm run x-auth
-// Needs X_CLIENT_ID and X_CLIENT_SECRET in .env. Sign in as the bot (@mergeapibot) and click Authorize.
+// Needs X_CLIENT_ID and X_CLIENT_SECRET in .env. Sign in as the bot (X_BOT_USERNAME) and click Authorize.
 import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { execFile } from 'node:child_process';
 import { getMentionStore } from '../src/mastra/mention-store';
+import { botUserName } from '../src/mastra/x-adapter';
 
 const clientId = process.env.X_CLIENT_ID;
 const clientSecret = process.env.X_CLIENT_SECRET;
@@ -66,9 +67,9 @@ async function handleCallback(req: IncomingMessage, res: ServerResponse) {
   const me = (await meRes.json()) as {
     data?: { username?: string };
   };
-  if (!meRes.ok || me.data?.username?.toLowerCase() !== 'mergeapibot') {
-    res.writeHead(400).end('Sign-in did not verify @mergeapibot. No tokens were saved.');
-    return finish(new Error('Expected the @mergeapibot account. No tokens were saved.'));
+  if (!meRes.ok || me.data?.username?.toLowerCase() !== botUserName.toLowerCase()) {
+    res.writeHead(400).end(`Sign-in did not verify @${botUserName}. No tokens were saved.`);
+    return finish(new Error(`Expected the @${botUserName} account. No tokens were saved.`));
   }
   setEnv({ X_USER_ACCESS_TOKEN: tokens.access_token, X_REFRESH_TOKEN: tokens.refresh_token });
   // A new authorization supersedes any previously persisted rotated refresh token.

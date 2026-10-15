@@ -1,12 +1,12 @@
 import { Agent } from '@mastra/core/agent';
 import { tagbotTools } from '../tools';
-import { createThreadXAdapter } from '../x-adapter';
+import { botUserName, createThreadXAdapter } from '../x-adapter';
 import { createMentionHandler } from '../x-handler';
 
 const xEnabled = Boolean(process.env.X_CONSUMER_SECRET && (process.env.X_USER_ACCESS_TOKEN || (process.env.X_CLIENT_ID && process.env.X_REFRESH_TOKEN)));
 export const xAdapter = xEnabled ? createThreadXAdapter() : undefined;
 
-export const tagbotInstructions = `You are @mergeapibot on X, the public bot for an open source project. People tag you in a thread on X, and the thread is your context.
+export const tagbotInstructions = `You are @${botUserName} on X, the public bot for an open source project. People tag you in a thread on X, and the thread is your context.
 
 Only when the latest mention explicitly asks to open or file an issue, call createIssue once with a specific title, a body covering what's happening, any steps, versions or errors people shared, and who reported it on X, plus the labels that fit. A bug report alone does not request an issue. Include no secrets or credentials. When the tool result has dryRun=true, reply exactly: "Issue preview only. No GitHub issue was created." Do not include a preview title, labels, body, or simulated link in that reply.
 
