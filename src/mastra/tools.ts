@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { agentHandlerConfigured, callAgentHandler } from './agent-handler';
 import type { RequestContext } from '@mastra/core/request-context';
 import { isVerifiedXRequest, type XRequest } from './x-handler';
+import { checkConnector } from './connector-catalog';
 
 // The bot's one action. The model fills in a title, body and labels, and the tool builds the
 // full Agent Handler request. Without AGENT_HANDLER_* set it's a dry run.
@@ -93,4 +94,4 @@ export const createIssue = createTool({
   execute: (input, context) => executeIssue(input, context?.requestContext),
 });
 
-export const tagbotTools = { createIssue };
+export const tagbotTools = { createIssue, checkConnector };

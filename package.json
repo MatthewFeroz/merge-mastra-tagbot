@@ -11,7 +11,7 @@
     "demo": "tsx --env-file-if-exists=.env scripts/demo.ts",
     "demo:export": "tsx scripts/export-demo.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx scripts/smoke-test.ts && tsx scripts/x-integration-test.ts && tsx scripts/limits-test.ts && tsx scripts/demo-feed-test.ts",
+    "test": "tsx scripts/smoke-test.ts && tsx scripts/x-integration-test.ts && tsx scripts/limits-test.ts && tsx scripts/demo-feed-test.ts && tsx scripts/catalog-test.ts",
     "test:live": "tsx --env-file-if-exists=.env scripts/live-test.ts",
     "x-auth": "tsx --env-file-if-exists=.env scripts/x-auth.ts"
   },
